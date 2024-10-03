@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Panel Application</title>
+    <style>
+      html, body {
+        box-sizing: border-box;
+        display: flow-root;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+
+<link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.5.2/dist/css/loading.css" type="text/css" />
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 400px));
+  -webkit-mask-size: auto calc(min(50%, 400px));
+}
+.py-error { display: none; }</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.5.2/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.5.2/dist/panel.min.js"></script>
+
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>  </head>
+  <body class="pn-loading pn-arc">
+    <div id="ec6723fb-9d67-49d9-81cf-41fc8089ea24" data-root-id="p1006" style="display: contents;"></div>
+  <div id="f6933118-fedf-47be-a7a1-728f18c84819" data-root-id="p1007" style="display: contents;"></div>
+  <div id="b0cf7cc6-5896-4b15-9b5a-83982db1044b" data-root-id="p1008" style="display: contents;"></div>
+  <div id="a72eaf57-8744-43d5-a317-cd09765cedce" data-root-id="p1009" style="display: contents;"></div>
+  <div id="e0997a08-e049-4397-aca7-31d1e53da2e5" data-root-id="p1073" style="display: contents;"></div>
+  <div id="c5667472-85a2-4a4b-a975-3106fcc90554" data-root-id="p1074" style="display: contents;"></div>
+  
+    <script type="text/javascript">
+      const pyodideWorker = new Worker("./holoviews_glyph_link.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1075">
+      {"2ad7dfa8-dc90-4026-a6b5-64ef795a993e":{"version":"3.6.0","title":"Panel Application","roots":[{"type":"object","name":"panel.models.markup.HTML","id":"p1006","attributes":{"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1004","attributes":{"url":"https://cdn.holoviz.org/panel/1.5.2/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1005","attributes":{"url":"https://cdn.holoviz.org/panel/1.5.2/dist/css/markdown.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1002","attributes":{"url":"https://cdn.holoviz.org/panel/1.5.2/dist/bundled/theme/default.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1003","attributes":{"url":"https://cdn.holoviz.org/panel/1.5.2/dist/bundled/theme/native.css"}}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;HoloViews-generated Bokeh plots can be statically linked to widgets that control their properties, allowing you to export static HTML files that allow end-user customization of appearance.&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"panel.models.location.Location","id":"p1007","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1008","attributes":{"name":"browser_info"}},{"type":"object","name":"Row","id":"p1009","attributes":{"name":"Row00284","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1004"},{"type":"object","name":"ImportedStyleSheet","id":"p1016","attributes":{"url":"https://cdn.holoviz.org/panel/1.5.2/dist/css/listpanel.css"}},{"id":"p1002"},{"id":"p1003"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"panel.models.layout.Column","id":"p1010","attributes":{"name":"Column00283","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1004"},{"id":"p1016"},{"id":"p1002"},{"id":"p1003"}],"margin":0,"align":"start","children":[{"type":"object","name":"Slider","id":"p1011","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1069","attributes":{"tags":[[4688642576,[null,"value"],["glyph","fill_alpha"]]],"args":{"type":"map","entries":[["bidirectional",false],["properties",{"type":"map","entries":[["value","glyph.fill_alpha"]]}],["source",{"id":"p1011"}],["target",{"type":"object","name":"Scatter","id":"p1062","attributes":{"tags":["apply_ranges"],"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"size":{"type":"value","value":12},"fill_color":{"type":"value","value":"#f80000"},"fill_alpha":{"type":"value","value":0.5},"hatch_color":{"type":"value","value":"#30a2da"}}}],["target_source",{"type":"object","name":"ColumnDataSource","id":"p1056","attributes":{"selected":{"type":"object","name":"Selection","id":"p1057","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1058"},"data":{"type":"map","entries":[["x",{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[200],"dtype":"float64","order":"little"}],["y",{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[200],"dtype":"float64","order":"little"}]]}}}],["xaxis",{"type":"object","name":"LinearAxis","id":"p1035","attributes":{"ticker":{"type":"object","name":"BasicTicker","id":"p1036","attributes":{"mantissas":[1,2,5]}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1037"},"axis_label":"x","major_label_policy":{"type":"object","name":"AllLabels","id":"p1038"}}}],["x_range",{"type":"object","name":"Range1d","id":"p1017","attributes":{"name":"x","tags":[[["x",null]],[]],"start":-3.705742440530284,"end":3.0217170819267163,"reset_start":-3.705742440530284,"reset_end":3.0217170819267163}}],["yaxis",{"type":"object","name":"LinearAxis","id":"p1040","attributes":{"ticker":{"type":"object","name":"BasicTicker","id":"p1041","attributes":{"mantissas":[1,2,5]}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1042"},"axis_label":"y","major_label_policy":{"type":"object","name":"AllLabels","id":"p1043"}}}],["y_range",{"type":"object","name":"Range1d","id":"p1018","attributes":{"name":"y","tags":[[["y",null]],{"type":"map","entries":[["invert_yaxis",false],["autorange",false]]}],"start":-3.4507558548840715,"end":4.018630635390994,"reset_start":-3.4507558548840715,"reset_end":4.018630635390994}}],["plot",{"type":"object","name":"Figure","id":"p1023","attributes":{"width":null,"height":500,"margin":[5,10],"sizing_mode":"stretch_width","align":"start","x_range":{"id":"p1017"},"y_range":{"id":"p1018"},"x_scale":{"type":"object","name":"LinearScale","id":"p1033"},"y_scale":{"type":"object","name":"LinearScale","id":"p1034"},"title":{"type":"object","name":"Title","id":"p1026","attributes":{"text_color":"black","text_font_size":"12pt"}},"renderers":[{"type":"object","name":"GlyphRenderer","id":"p1065","attributes":{"data_source":{"id":"p1056"},"view":{"type":"object","name":"CDSView","id":"p1066","attributes":{"filter":{"type":"object","name":"AllIndices","id":"p1067"}}},"glyph":{"id":"p1062"},"selection_glyph":{"type":"object","name":"Scatter","id":"p1068","attributes":{"tags":["apply_ranges"],"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"size":{"type":"value","value":2.449489742783178},"angle":{"type":"value","value":0.0},"line_color":{"type":"value","value":"black"},"line_alpha":{"type":"value","value":1.0},"line_width":{"type":"value","value":1},"line_join":{"type":"value","value":"bevel"},"line_cap":{"type":"value","value":"butt"},"line_dash":{"type":"value","value":[]},"line_dash_offset":{"type":"value","value":0},"fill_color":{"type":"value","value":"#30a2da"},"fill_alpha":{"type":"value","value":1.0},"hatch_color":{"type":"value","value":"#30a2da"},"hatch_alpha":{"type":"value","value":1.0},"hatch_scale":{"type":"value","value":12.0},"hatch_pattern":{"type":"value","value":null},"hatch_weight":{"type":"value","value":1.0},"marker":{"type":"value","value":"circle"}}},"nonselection_glyph":{"type":"object","name":"Scatter","id":"p1063","attributes":{"tags":["apply_ranges"],"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"size":{"type":"value","value":2.449489742783178},"line_alpha":{"type":"value","value":0.1},"fill_color":{"type":"value","value":"#30a2da"},"fill_alpha":{"type":"value","value":0.1},"hatch_color":{"type":"value","value":"#30a2da"},"hatch_alpha":{"type":"value","value":0.1}}},"muted_glyph":{"type":"object","name":"Scatter","id":"p1064","attributes":{"tags":["apply_ranges"],"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"size":{"type":"value","value":2.449489742783178},"line_alpha":{"type":"value","value":0.2},"fill_color":{"type":"value","value":"#30a2da"},"fill_alpha":{"type":"value","value":0.2},"hatch_color":{"type":"value","value":"#30a2da"},"hatch_alpha":{"type":"value","value":0.2}}}}}],"toolbar":{"type":"object","name":"Toolbar","id":"p1032","attributes":{"tools":[{"type":"object","name":"WheelZoomTool","id":"p1022","attributes":{"tags":["hv_created"],"renderers":"auto","zoom_together":"none"}},{"type":"object","name":"SaveTool","id":"p1045"},{"type":"object","name":"PanTool","id":"p1046"},{"type":"object","name":"BoxZoomTool","id":"p1047","attributes":{"overlay":{"type":"object","name":"BoxAnnotation","id":"p1048","attributes":{"syncable":false,"line_color":"black","line_alpha":1.0,"line_width":2,"line_dash":[4,4],"fill_color":"lightgrey","fill_alpha":0.5,"level":"overlay","visible":false,"left":{"type":"number","value":"nan"},"right":{"type":"number","value":"nan"},"top":{"type":"number","value":"nan"},"bottom":{"type":"number","value":"nan"},"left_units":"canvas","right_units":"canvas","top_units":"canvas","bottom_units":"canvas","handles":{"type":"object","name":"BoxInteractionHandles","id":"p1054","attributes":{"all":{"type":"object","name":"AreaVisuals","id":"p1053","attributes":{"fill_color":"white","hover_fill_color":"lightgray"}}}}}}}},{"type":"object","name":"ResetTool","id":"p1055"}],"active_drag":{"id":"p1046"},"active_scroll":{"id":"p1022"}}},"left":[{"id":"p1040"}],"below":[{"id":"p1035"}],"center":[{"type":"object","name":"Grid","id":"p1039","attributes":{"axis":{"id":"p1035"},"grid_line_color":null}},{"type":"object","name":"Grid","id":"p1044","attributes":{"dimension":1,"axis":{"id":"p1040"},"grid_line_color":null}}],"min_border_top":10,"min_border_bottom":10,"min_border_left":10,"min_border_right":10,"output_backend":"webgl"}}],["cds",{"id":"p1056"}],["selected",{"id":"p1057"}],["glyph",{"id":"p1062"}],["glyph_renderer",{"id":"p1065"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['fill_alpha'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set fill_alpha on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['fill_alpha'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1004"},{"id":"p1002"},{"id":"p1003"}],"margin":[5,10],"align":"start","title":"Alpha","start":0,"end":1,"value":0.5,"step":0.1}},{"type":"object","name":"ColorPicker","id":"p1012","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:color",[{"type":"object","name":"CustomJS","id":"p1070","attributes":{"tags":[[4685385744,[null,"color"],["glyph","fill_color"]]],"args":{"type":"map","entries":[["bidirectional",false],["properties",{"type":"map","entries":[["value","glyph.fill_color"]]}],["source",{"id":"p1012"}],["target",{"id":"p1062"}],["target_source",{"id":"p1056"}],["xaxis",{"id":"p1035"}],["x_range",{"id":"p1017"}],["yaxis",{"id":"p1040"}],["y_range",{"id":"p1018"}],["plot",{"id":"p1023"}],["cds",{"id":"p1056"}],["selected",{"id":"p1057"}],["glyph",{"id":"p1062"}],["glyph_renderer",{"id":"p1065"}]]},"code":"\n    var value = source['color'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['fill_color'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set fill_color on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['fill_color'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1004"},{"id":"p1002"},{"id":"p1003"}],"width":52,"min_width":52,"margin":[5,10],"align":"start","title":"Color","color":"#f80000"}},{"type":"object","name":"panel.models.widgets.CustomSelect","id":"p1014","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1071","attributes":{"tags":[[4692365776,[null,"value"],["glyph","marker"]]],"args":{"type":"map","entries":[["bidirectional",false],["properties",{"type":"map","entries":[["value","glyph.marker"]]}],["source",{"id":"p1014"}],["target",{"id":"p1062"}],["target_source",{"id":"p1056"}],["xaxis",{"id":"p1035"}],["x_range",{"id":"p1017"}],["yaxis",{"id":"p1040"}],["y_range",{"id":"p1018"}],["plot",{"id":"p1023"}],["cds",{"id":"p1056"}],["selected",{"id":"p1057"}],["glyph",{"id":"p1062"}],["glyph_renderer",{"id":"p1065"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['marker'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set marker on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['marker'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1004"},{"type":"object","name":"ImportedStyleSheet","id":"p1013","attributes":{"url":"https://cdn.holoviz.org/panel/1.5.2/dist/css/select.css"}},{"id":"p1002"},{"id":"p1003"}],"width":300,"min_width":300,"margin":[5,10],"align":"start","title":"Marker","options":["asterisk","circle","circle_cross","circle_dot","circle_x","circle_y","cross","dash","diamond","diamond_cross","diamond_dot","dot","hex","hex_dot","inverted_triangle","plus","square","square_cross","square_dot","square_pin","square_x","star","star_dot","triangle","triangle_dot","triangle_pin","x","y"],"value":"circle"}},{"type":"object","name":"Slider","id":"p1015","attributes":{"js_property_callbacks":{"type":"map","entries":[["change:value",[{"type":"object","name":"CustomJS","id":"p1072","attributes":{"tags":[[4692347216,[null,"value"],["glyph","size"]]],"args":{"type":"map","entries":[["bidirectional",false],["properties",{"type":"map","entries":[["value","glyph.size"]]}],["source",{"id":"p1015"}],["target",{"id":"p1062"}],["target_source",{"id":"p1056"}],["xaxis",{"id":"p1035"}],["x_range",{"id":"p1017"}],["yaxis",{"id":"p1040"}],["y_range",{"id":"p1018"}],["plot",{"id":"p1023"}],["cds",{"id":"p1056"}],["selected",{"id":"p1057"}],["glyph",{"id":"p1062"}],["glyph_renderer",{"id":"p1065"}]]},"code":"\n    var value = source['value'];\n    value = value;\n    value = value;\n    try {\n      var property = target.properties['size'];\n      if (property !== undefined) { property.validate(value); }\n    } catch(err) {\n      console.log('WARNING: Could not set size on target, raised error: ' + err);\n      return;\n    }\n    try {\n      target['size'] = value;\n    } catch(err) {\n      console.log(err)\n    }\n    "}}]]]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 400px));\n  -webkit-mask-size: auto calc(min(50%, 400px));\n}",{"id":"p1004"},{"id":"p1002"},{"id":"p1003"}],"margin":[5,10],"align":"start","title":"Size","start":3,"end":20,"value":12,"step":0.1}}]}},{"id":"p1023"}]}},{"type":"object","name":"panel.models.location.Location","id":"p1073","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1074","attributes":{"name":"browser_info"}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"mode","kind":"Any","default":"warn"},{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationAreaBase1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1"},{"type":"model","name":"JSComponent1"},{"type":"model","name":"ReactComponent1"},{"type":"model","name":"AnyWidgetComponent1"},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}}
+    </script>
+    <script type="text/javascript">
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1075').textContent;
+              const render_items = [{"docid":"2ad7dfa8-dc90-4026-a6b5-64ef795a993e","roots":{"p1006":"ec6723fb-9d67-49d9-81cf-41fc8089ea24","p1007":"f6933118-fedf-47be-a7a1-728f18c84819","p1008":"b0cf7cc6-5896-4b15-9b5a-83982db1044b","p1009":"a72eaf57-8744-43d5-a317-cd09765cedce","p1073":"e0997a08-e049-4397-aca7-31d1e53da2e5","p1074":"c5667472-85a2-4a4b-a975-3106fcc90554"},"root_ids":["p1006","p1007","p1008","p1009","p1073","p1074"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>
